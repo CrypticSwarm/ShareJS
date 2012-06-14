@@ -56,9 +56,42 @@ tree.compose = (op1, op2) ->
 
   newOp
 
+tree.append = (op) ->
+
 tree.transformComponent = (dest, c, otherC, type) ->
 
 tree.apply = (snapshot, op) ->
   tree.checkValidOp op
+  op = clone op
 
+  container = {data: clone snapshot}
+  for c in op
+    tree.applyComponent container, c
+
+# split: mn -> maintext, nn -> alttext, pos -> position
+# merge: mn -> maintext, on -> alttext, len -> mainnodelength
+# reparent: op -> oldparent, np -> newparent
+# create: cn -> name, parent -> parentName
+# delete: dn -> name, parent -> parentName
+tree.applyComponent = (container, c) ->
+  snapshot = container.data
+  # split
+  if c.nn
+    mn = snapshot[c.mn]
+    throw new Error "Referenced main node not a string (it was #{JSON.stringify elem})" unless typeof mn.value is 'string'
+    snapshot[c.nn] = { parent: mn.parent, value: mn.value[c.pos...] }
+    mn.value = mn.value[...c.pos]
+
+  # merge
+  if c.on
+    mn = snapshot[c.mn]
+    old = snapshot[c.on]
+    throw new Error "Referenced main node not a string (it was #{JSON.stringify elem})" unless typeof mn.value is 'string'
+    throw new Error "Referenced old node not a string (it was #{JSON.stringify elem})" unless typeof old.value is 'string'
+    throw new Error "length should equal main nodes length" unless c.len == mn.value.length
+    mn.value = mn.value + old.value
+    delete snapshot[c.on]
+  snapshot
+
+module.exports = tree
 
