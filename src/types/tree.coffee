@@ -21,14 +21,14 @@ tree.create = -> {}
 
 tree.invert = (op) -> tree.invertComponent c for c in op.slice().reverse()
 tree.invertComponent = (c) ->
-  if c.p.length > 0
+  if c.p?.length > 0
     c_ = json.invertComponent c
   else
-    c_ = { p: [], tn: c.tn, on: c.nn, len: c.pos } if c.nn
-    c_ = { p: [], tn: c.tn, nn: c.on, pos: c.len } if c.on
-    c_ = { p: [], tn: c.tn, op: c.np, np: c.op } if c.op
-    c_ = { p: [], dn: c.cn, par: c.par, val: c.val } if c.cn
-    c_ = { p: [], cn: c.dn, par: c.par, val: c.val } if c.dn
+    c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn
+    c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
+    c_ = { tn: c.tn, op: c.np, np: c.op } if c.op
+    c_ = { dn: c.cn, par: c.par, val: c.val } if c.cn
+    c_ = { cn: c.dn, par: c.par, val: c.val } if c.dn
   c_
 
 tree.checkList = json.checkList
@@ -41,7 +41,7 @@ tree.checkValidOp = (op) ->
   tree.checkValidComponent(c) for c in op
 
 tree.checkValidComponent = (c) ->
-  if c.p.length > 1
+  if c.p?.length > 1
     if c.p[1] == 'value'
       json.checkValidOp c
     else
