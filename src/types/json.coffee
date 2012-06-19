@@ -46,80 +46,82 @@ json.apply = (snapshot, op) ->
 
   try
     for c, i in op
-      parent = null
-      parentkey = null
-      elem = container
-      key = 'data'
-
-      for p in c.p
-        parent = elem
-        parentkey = key
-        elem = elem[key]
-        key = p
-
-        throw new Error 'Path invalid' unless parent?
-
-      if c.na != undefined
-        # Number add
-        throw new Error 'Referenced element not a number' unless typeof elem[key] is 'number'
-        elem[key] += c.na
-
-      else if c.si != undefined
-        # String insert
-        throw new Error "Referenced element not a string (it was #{JSON.stringify elem})" unless typeof elem is 'string'
-        parent[parentkey] = elem[...key] + c.si + elem[key..]
-      else if c.sd != undefined
-        # String delete
-        throw new Error 'Referenced element not a string' unless typeof elem is 'string'
-        throw new Error 'Deleted string does not match' unless elem[key...key + c.sd.length] == c.sd
-        parent[parentkey] = elem[...key] + elem[key + c.sd.length..]
-
-      else if c.li != undefined && c.ld != undefined
-        # List replace
-        json.checkList elem
-
-        # Should check the list element matches c.ld
-        elem[key] = c.li
-      else if c.li != undefined
-        # List insert
-        json.checkList elem
-
-        elem.splice key, 0, c.li
-      else if c.ld != undefined
-        # List delete
-        json.checkList elem
-
-        # Should check the list element matches c.ld here too.
-        elem.splice key, 1
-      else if c.lm != undefined
-        # List move
-        json.checkList elem
-        if c.lm != key
-          e = elem[key]
-          # Remove it...
-          elem.splice key, 1
-          # And insert it back.
-          elem.splice c.lm, 0, e
-
-      else if c.oi != undefined
-        # Object insert / replace
-        json.checkObj elem
-        
-        # Should check that elem[key] == c.od
-        elem[key] = c.oi
-      else if c.od != undefined
-        # Object delete
-        json.checkObj elem
-
-        # Should check that elem[key] == c.od
-        delete elem[key]
-      else
-        throw new Error 'invalid / missing instruction in op'
+      json.applyComponent container, c
   catch error
     # TODO: Roll back all already applied changes. Write tests before implementing this code.
     throw error
 
   container.data
+
+json.applyComponent = (elem, c) ->
+  parent = null
+  parentkey = null
+  key = 'data'
+
+  for p in c.p
+    parent = elem
+    parentkey = key
+    elem = elem[key]
+    key = p
+
+    throw new Error 'Path invalid' unless parent?
+
+  if c.na != undefined
+    # Number add
+    throw new Error 'Referenced element not a number' unless typeof elem[key] is 'number'
+    elem[key] += c.na
+
+  else if c.si != undefined
+    # String insert
+    throw new Error "Referenced element not a string (it was #{JSON.stringify elem})" unless typeof elem is 'string'
+    parent[parentkey] = elem[...key] + c.si + elem[key..]
+  else if c.sd != undefined
+    # String delete
+    throw new Error 'Referenced element not a string' unless typeof elem is 'string'
+    throw new Error 'Deleted string does not match' unless elem[key...key + c.sd.length] == c.sd
+    parent[parentkey] = elem[...key] + elem[key + c.sd.length..]
+
+  else if c.li != undefined && c.ld != undefined
+    # List replace
+    json.checkList elem
+
+    # Should check the list element matches c.ld
+    elem[key] = c.li
+  else if c.li != undefined
+    # List insert
+    json.checkList elem
+
+    elem.splice key, 0, c.li
+  else if c.ld != undefined
+    # List delete
+    json.checkList elem
+
+    # Should check the list element matches c.ld here too.
+    elem.splice key, 1
+  else if c.lm != undefined
+    # List move
+    json.checkList elem
+    if c.lm != key
+      e = elem[key]
+      # Remove it...
+      elem.splice key, 1
+      # And insert it back.
+      elem.splice c.lm, 0, e
+
+  else if c.oi != undefined
+    # Object insert / replace
+    json.checkObj elem
+
+    # Should check that elem[key] == c.od
+    elem[key] = c.oi
+  else if c.od != undefined
+    # Object delete
+    json.checkObj elem
+
+    # Should check that elem[key] == c.od
+    delete elem[key]
+  else
+    throw new Error 'invalid / missing instruction in op'
 
 # Checks if two paths, p1 and p2 match.
 json.pathMatches = (p1, p2, ignoreLast) ->
