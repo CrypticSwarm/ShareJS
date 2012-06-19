@@ -115,4 +115,15 @@ tree.applyDeleteNode = (snapshot, c) ->
   # Probably should check that the current parent and value is correct.
   delete snapshot[c.dn]
 
-module.exports = tree
+if WEB?
+  exports.types ||= {}
+
+  # This is kind of awful - come up with a better way to hook this helper code up.
+  exports._bt(tree, tree.transformComponent, tree.checkValidOp, tree.append)
+
+  # [] is used to prevent closure from renaming types.text
+  exports.types.tree = tree
+else
+  module.exports = tree
+
+  require('./helpers').bootstrapTransform(tree, tree.transformComponent, tree.checkValidOp, tree.append)
