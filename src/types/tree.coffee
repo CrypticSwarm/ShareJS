@@ -1,9 +1,9 @@
 # nodes -> { parent, value }
-# split: tn -> maintext, nn -> alttext, pos -> position
-# merge: tn -> maintext, on -> alttext, len -> length
-# reparent: op -> oldparent, np -> newparent
-# create: cn -> name, parent -> parentName
-# delete: dn -> name, parent -> parentName
+# split: tn -> targetnode, nn -> newnode, pos -> position
+# merge: tn -> targetnode, on -> oldnode, len -> length
+# reparent: tn -> targetnode, op -> oldparent, np -> newparent
+# create: cn -> createnode, parent -> parentName
+# delete: dn -> deletenode, parent -> parentName
 
 if WEB?
   json = exports.types.json
@@ -26,13 +26,11 @@ tree.invertComponent = (c) ->
   else
     c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn
     c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
-    c_ = { tn: c.tn, op: c.np, np: c.op } if c.op
+    c_ = { tn: c.tn, op: c.np, np: c.op, npp: c.opp, opp: c.npp } if c.op
     c_ = { dn: c.cn, par: c.par, val: c.val } if c.cn
     c_ = { cn: c.dn, par: c.par, val: c.val } if c.dn
   c_
 
-tree.checkList = json.checkList
-tree.checkObj = json.checkObj
 tree.pathMatches = json.pathMatches
 tree.normalize = json.normalize
 tree.commonPath = json.commonPath 
@@ -58,9 +56,57 @@ tree.compose = (op1, op2) ->
 
   newOp
 
-tree.append = (op) ->
+# For now nothing fancy just append
+tree.append = (dest, c) -> dest.push c
 
+# dispatches based off the types of each component.
 tree.transformComponent = (dest, c, otherC, type) ->
+  if c.op
+    if otherC.op
+      tree.transformReparent dest, c, otherC, type
+    else if otherC.nn or otherC.on
+      tree.transformReparentSplit dest, c, otherC, type
+  else if c.on or c.nn
+    if otherC.si or otherC.sd
+      tree.transformStringManipR dest, c, otherC, type
+    else if otherC.nn or otherC.on
+      tree.transformSplitMergeR dest, c, otherC, type
+    else if otherC.op
+      tree.transformReparentSplit dest, c, otherC, type
+  else if c.si or c.sd
+    if otherC.on or otherC.nn
+      tree.transformStringManipL dest, c, otherC, type
+
+  # Probably need to do some things with create/delete node
+  else
+    json.transformComponent dest, c, otherC, type
+
+# c -> reparent, otherC -> reparent
+tree.transformReparent = (dest, c, otherC, type) ->
+  if c.tn == otherC.tn
+    if type == 'left'
+      tree.append dest, { tn: otherC.np, op: otherC.npp, np: c.np, opp: , npp: c.npp }
+    else
+      tree.append dest, { tn: otherC.tn, op: otherC.np, np: c.np }
+      tree.append dest, { tn: c.np, op: null, np: otherC.np }
+  else
+    tree.append dest, c
+  dest
+
+# c -> si/sd, otherC -> split/merge
+tree.transformStringManipL = (dest, c, otherC, type) ->
+
+# c -> split/merge, otherC -> si/sd
+tree.transformStringManipR = (dest, c, otherC, type) ->
+
+# c-> split/merge, otherC -> split/merge
+tree.transformSplitMerge  = (dest, c, otherC, type) ->
+
+# c -> reparent, otherC -> split/merge
+tree.transformReparentSplitL = (dest, c, otherC, type) ->
+
+# c -> split/merge, otherC -> reparent
+tree.transformReparentSplitR = (dest, c, otherC, type) ->
 
 tree.apply = (snapshot, op) ->
   tree.checkValidOp op
@@ -105,7 +151,11 @@ tree.applyMerge = (snapshot, c) ->
 
 tree.applyReparent = (snapshot, c) ->
   tn = snapshot[c.tn]
-  throw new Error "Parent should equal par." unless tn.parent == c.op
+  op = snapshot[c.op]
+  np = snapshot[c.np]
+  throw new Error "Target's Parent should equal op. (#{tn.parent}, #{c.op}) respectively" unless tn.parent == c.op
+  throw new Error "Old Parent's Parent should equal opp. (#{op.parent}, #{c.opp}) respectively" unless op and op.parent == c.opp
+  throw new Error "New Parent's Parent should equal npp. (#{np.parent}, #{c.npp}) respectively" unless np and np.parent == c.npp
   tn.parent = c.np
 
 tree.applyCreateNode = (snapshot, c) ->
