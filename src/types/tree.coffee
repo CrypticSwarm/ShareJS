@@ -86,7 +86,7 @@ tree.transformComponent = (dest, c, otherC, type) ->
 difference = (a, b) ->
   diff = []
   for x in a
-    diff.push x if b.indexOf x == -1
+    diff.push x if -1 == b.indexOf x
   diff
 
 # warp: wrap -> targetnode, par -> parent, chi -> child
@@ -102,11 +102,31 @@ tree.transformWrap = (dest, c, otherC, type) ->
         dest.push { wrap: c.wrap, par: c.par, chi: diff }
     # not same parent left applies the new one
     else if type == 'left'
-      dest.push tree.invert otherC
+      dest.push tree.invertComponent otherC
       dest.push c
+  # diff target node, but same parents
   else if c.par == otherC.par
-    diff = difference c.chi, otherC.chi
-    symDiff = diff.concat difference otherC.chi, c.chi
+    if c.chi.length > 0 or otherC.chi.length > 0
+      ldiff = difference c.chi, otherC.chi
+      rdiff = difference otherC.chi, c.chi
+      # same children... nest them
+      if ldiff.length == 0 and rdiff.length == 0
+        if type == 'left'
+          dest.push { wrap: c.wrap, par: c.par, chi: [otherC.wrap] }
+        else
+          dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
+      # disjoint children both occur unchanged
+      else if ldiff.length == c.chi.length and rdiff.length == otherC.chi.length
+        dest.push c
+      # c.chi is a subset of otherC.chi... c.wrap is nested
+      else if ldiff.length == 0
+        dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
+      # otherC.chi is a subset of c.chi... otherC.wrap is nested
+      else if rdiff.length == 0
+        dest.push { wrap: c.wrap, par: otherC.par, chi: ldiff.concat otherC.wrap }
+      # else there is an intersection.... Need to figure out cloning to work right
+  else
+    dest.push c
 
   dest
 
