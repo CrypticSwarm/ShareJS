@@ -1,7 +1,8 @@
 # nodes -> { parent, value }
 # split: tn -> targetnode, nn -> newnode, pos -> position
 # merge: tn -> targetnode, on -> oldnode, len -> length
-# reparent: tn -> targetnode, op -> oldparent, np -> newparent
+# warp: wrap -> targetnode, par -> parent, chi -> child
+# unwarp: unwrap -> targetnode, par -> parent, chi -> child
 # create: cn -> createnode, parent -> parentName
 # delete: dn -> deletenode, parent -> parentName
 
@@ -26,7 +27,8 @@ tree.invertComponent = (c) ->
   else
     c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn
     c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
-    c_ = { tn: c.tn, op: c.np, np: c.op, npp: c.opp, opp: c.npp } if c.op
+    c_ = { unwrap: c.wrap, par: c.par, chi: c.chi } if c.wrap
+    c_ = { wrap: c.unwrap, par: c.par, chi: c.chi } if c.unwrap
     c_ = { dn: c.cn, par: c.par, val: c.val } if c.cn
     c_ = { cn: c.dn, par: c.par, val: c.val } if c.dn
   c_
@@ -45,7 +47,7 @@ tree.checkValidComponent = (c) ->
     else
       throw new Error "Don't try to modify nodes directly."
   else
-    throw new Error "Component should contain tn, op, cn or dn attrs" unless c.tn or c.op or c.cn or c.dn
+    throw new Error "Component should contain tn, wrap, unwrap, cn or dn attrs" unless c.tn or c.wrap or c.unwrap or c.cn or c.dn
 
 tree.compose = (op1, op2) ->
   tree.checkValidOp op1
@@ -61,18 +63,18 @@ tree.append = (dest, c) -> dest.push c
 
 # dispatches based off the types of each component.
 tree.transformComponent = (dest, c, otherC, type) ->
-  if c.op
-    if otherC.op
-      tree.transformReparent dest, c, otherC, type
+  if c.wrap
+    if otherC.wrap
+      tree.transformWrap dest, c, otherC, type
     else if otherC.nn or otherC.on
-      tree.transformReparentSplit dest, c, otherC, type
+      tree.transformWrapSplitL dest, c, otherC, type
   else if c.on or c.nn
     if otherC.si or otherC.sd
       tree.transformStringManipR dest, c, otherC, type
     else if otherC.nn or otherC.on
       tree.transformSplitMergeR dest, c, otherC, type
-    else if otherC.op
-      tree.transformReparentSplit dest, c, otherC, type
+    else if otherC.wrap
+      tree.transformWrapSplitR dest, c, otherC, type
   else if c.si or c.sd
     if otherC.on or otherC.nn
       tree.transformStringManipL dest, c, otherC, type
@@ -81,17 +83,34 @@ tree.transformComponent = (dest, c, otherC, type) ->
   else
     json.transformComponent dest, c, otherC, type
 
-# c -> reparent, otherC -> reparent
-tree.transformReparent = (dest, c, otherC, type) ->
-  if c.tn == otherC.tn
-    if type == 'left'
-      tree.append dest, { tn: otherC.np, op: otherC.npp, np: c.np, opp: , npp: c.npp }
-    else
-      tree.append dest, { tn: otherC.tn, op: otherC.np, np: c.np }
-      tree.append dest, { tn: c.np, op: null, np: otherC.np }
-  else
-    tree.append dest, c
+difference = (a, b) ->
+  diff = []
+  for x in a
+    diff.push x if b.indexOf x == -1
+  diff
+
+# warp: wrap -> targetnode, par -> parent, chi -> child
+# unwarp: unwrap -> targetnode, par -> parent, chi -> child
+tree.transformWrap = (dest, c, otherC, type) ->
+  # same target node
+  if c.wrap == otherC.wrap
+    # same parent grab all children
+    if c.par == otherC.par
+      diff = difference c.chi, otherC.chi
+      if diff.length != 0
+        dest.push { unwrap: c.wrap, par: c.par, chi: null }
+        dest.push { wrap: c.wrap, par: c.par, chi: diff }
+    # not same parent left applies the new one
+    else if type == 'left'
+      dest.push tree.invert otherC
+      dest.push c
+  else if c.par == otherC.par
+    diff = difference c.chi, otherC.chi
+    symDiff = diff.concat difference otherC.chi, c.chi
+
   dest
+
+tree.transformUnwrap = (dest, c, otherC, type) ->
 
 # c -> si/sd, otherC -> split/merge
 tree.transformStringManipL = (dest, c, otherC, type) ->
@@ -102,11 +121,11 @@ tree.transformStringManipR = (dest, c, otherC, type) ->
 # c-> split/merge, otherC -> split/merge
 tree.transformSplitMerge  = (dest, c, otherC, type) ->
 
-# c -> reparent, otherC -> split/merge
-tree.transformReparentSplitL = (dest, c, otherC, type) ->
+# c -> wrap, otherC -> split/merge
+tree.transformWrapSplitL = (dest, c, otherC, type) ->
 
-# c -> split/merge, otherC -> reparent
-tree.transformReparentSplitR = (dest, c, otherC, type) ->
+# c -> split/merge, otherC -> wrap
+tree.transformWrapSplitR = (dest, c, otherC, type) ->
 
 tree.apply = (snapshot, op) ->
   tree.checkValidOp op
@@ -124,8 +143,10 @@ tree.applyComponent = (container, c) ->
     tree.applySplit snapshot, c
   else if c.on
     tree.applyMerge snapshot, c
-  else if c.op
-    tree.applyReparent snapshot, c
+  else if c.wrap
+    tree.applyWrap snapshot, c
+  else if c.unwrap
+    tree.applyUnwrap snapshot, c
   else if c.cn
     tree.applyCreateNode snapshot, c
   else if c.dn
@@ -149,14 +170,27 @@ tree.applyMerge = (snapshot, c) ->
   tn.value = tn.value + old.value
   delete snapshot[c.on]
 
-tree.applyReparent = (snapshot, c) ->
-  tn = snapshot[c.tn]
-  op = snapshot[c.op]
-  np = snapshot[c.np]
-  throw new Error "Target's Parent should equal op. (#{tn.parent}, #{c.op}) respectively" unless tn.parent == c.op
-  throw new Error "Old Parent's Parent should equal opp. (#{op.parent}, #{c.opp}) respectively" unless op and op.parent == c.opp
-  throw new Error "New Parent's Parent should equal npp. (#{np.parent}, #{c.npp}) respectively" unless np and np.parent == c.npp
-  tn.parent = c.np
+tree.applyWrap = (snapshot, c) ->
+  wrap = snapshot[c.wrap]
+  par = snapshot[c.par]
+  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == c.par
+  throw new Error "Op(Wrap): Target's for wrap should exist." unless wrap
+  throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == null
+  throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
+  if c.chi
+    c.chi.map (child) -> snapshot[child].parent = c.wrap
+  wrap.parent = c.par
+
+tree.applyUnwrap = (snapshot, c) ->
+  unwrap = snapshot[c.unwrap]
+  par = snapshot[c.par]
+  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == c.unwrap
+  throw new Error "Op(Unwrap): Target should exist." unless unwrap
+  throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == c.par
+  throw new Error "Op(Wrap): all children's parent should equal unwrap" unless chiOk
+  if c.chi
+    c.chi.map (child) -> snapshot[child].parent = c.par
+  unwrap.parent = null
 
 tree.applyCreateNode = (snapshot, c) ->
   snapshot[c.cn] = {parent: c.par, value: c.val}
