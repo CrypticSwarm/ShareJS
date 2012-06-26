@@ -100,31 +100,33 @@ tree.transformWrap = (dest, c, otherC, type) ->
       if diff.length != 0
         dest.push { unwrap: c.wrap, par: c.par, chi: null }
         dest.push { wrap: c.wrap, par: c.par, chi: diff }
-    # not same parent left applies the new one
-    else if type == 'left'
+    # not same parent right applies the new one
+    else if type == 'right'
       dest.push tree.invertComponent otherC
       dest.push c
   # diff target node, but same parents
   else if c.par == otherC.par
-    if c.chi.length > 0 or otherC.chi.length > 0
-      ldiff = difference c.chi, otherC.chi
-      rdiff = difference otherC.chi, c.chi
-      # same children... nest them
-      if ldiff.length == 0 and rdiff.length == 0
-        if type == 'left'
-          dest.push { wrap: c.wrap, par: c.par, chi: [otherC.wrap] }
-        else
-          dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
-      # disjoint children both occur unchanged
-      else if ldiff.length == c.chi.length and rdiff.length == otherC.chi.length
-        dest.push c
-      # c.chi is a subset of otherC.chi... c.wrap is nested
-      else if ldiff.length == 0
+    ldiff = difference c.chi, otherC.chi
+    rdiff = difference otherC.chi, c.chi
+    # disjoint children both occur unchanged
+    if ldiff.length == c.chi.length and rdiff.length == otherC.chi.length
+      dest.push c
+    # same children... nest them
+    else if ldiff.length == 0 and rdiff.length == 0
+      if type == 'left'
+        dest.push { wrap: c.wrap, par: c.par, chi: [otherC.wrap] }
+      else
         dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
-      # otherC.chi is a subset of c.chi... otherC.wrap is nested
-      else if rdiff.length == 0
-        dest.push { wrap: c.wrap, par: otherC.par, chi: ldiff.concat otherC.wrap }
-      # else there is an intersection.... Need to figure out cloning to work right
+    # c.chi is a subset of otherC.chi... c.wrap is nested
+    else if ldiff.length == 0
+      dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
+    # otherC.chi is a subset of c.chi... otherC.wrap is nested
+    else if rdiff.length == 0
+      dest.push { wrap: c.wrap, par: otherC.par, chi: ldiff.concat otherC.wrap }
+    # else there is an intersection.... Need to figure out cloning to work right
+    else
+      dest.push c
+  # diff target, diff parents, c is unchanged
   else
     dest.push c
 
