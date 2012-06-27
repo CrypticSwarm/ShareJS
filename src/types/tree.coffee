@@ -68,6 +68,21 @@ tree.transformComponent = (dest, c, otherC, type) ->
       tree.transformWrap dest, c, otherC, type
     else if otherC.nn or otherC.on
       tree.transformWrapSplitL dest, c, otherC, type
+    else if otherC.cn
+      tree.transformWrapRef dest, c, otherC, type
+    else if otherC.unwrap
+      tree.transformWrapUnwrap dest, c, otherC, type
+    else
+      dest.push c
+  else if c.unwrap
+    if otherC.unwrap
+      tree.transformWrap dest, c, otherC, type
+    else if otherC.wrap
+      tree.transformWrapUnwrap dest, c, otherC, type
+    else if otherC.cn
+      tree.transformWrapRef dest, c, otherC, type
+    else
+      dest.push c
   else if c.on or c.nn
     if otherC.si or otherC.sd
       tree.transformStringManipR dest, c, otherC, type
@@ -75,9 +90,15 @@ tree.transformComponent = (dest, c, otherC, type) ->
       tree.transformSplitMergeR dest, c, otherC, type
     else if otherC.wrap
       tree.transformWrapSplitR dest, c, otherC, type
+    else
+      dest.push c
   else if c.si or c.sd
     if otherC.on or otherC.nn
       tree.transformStringManipL dest, c, otherC, type
+    else if otherC.p?.length > 1
+      json.transformComponent dest, c, otherC, type
+    else
+      dest.push c
   else if c.cn
     if otherC.cn
       tree.transformCreateNode dest, c, otherC, type
