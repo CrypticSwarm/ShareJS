@@ -33,10 +33,6 @@ tree.invertComponent = (c) ->
     c_ = { cn: c.dn, val: c.val } if c.dn
   c_
 
-tree.pathMatches = json.pathMatches
-tree.normalize = json.normalize
-tree.commonPath = json.commonPath 
-
 tree.checkValidOp = (op) ->
   tree.checkValidComponent(c) for c in op
 
