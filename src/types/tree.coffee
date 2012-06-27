@@ -3,8 +3,8 @@
 # merge: tn -> targetnode, on -> oldnode, len -> length
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
-# create: cn -> createnode, parent -> parentName
-# delete: dn -> deletenode, parent -> parentName
+# create: cn -> createnode, value -> value
+# delete: dn -> deletenode, value -> value
 
 if WEB?
   json = exports.types.json
@@ -27,10 +27,10 @@ tree.invertComponent = (c) ->
   else
     c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn
     c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
-    c_ = { unwrap: c.wrap, par: c.par, chi: c.chi } if c.wrap
-    c_ = { wrap: c.unwrap, par: c.par, chi: c.chi } if c.unwrap
-    c_ = { dn: c.cn, par: c.par, val: c.val } if c.cn
-    c_ = { cn: c.dn, par: c.par, val: c.val } if c.dn
+    c_ = { unwrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq } if c.wrap
+    c_ = { wrap: c.unwrap, par: c.par, chi: c.chi, seq: c.seq } if c.unwrap
+    c_ = { dn: c.cn, val: c.val } if c.cn
+    c_ = { cn: c.dn, val: c.val } if c.dn
   c_
 
 tree.pathMatches = json.pathMatches
@@ -137,8 +137,8 @@ tree.transformWrap = (dest, c, otherC, type) ->
     if c.par == otherC.par
       diff = difference c.chi, otherC.chi
       if diff.length != 0
-        dest.push { unwrap: c.wrap, par: c.par, chi: null }
-        dest.push { wrap: c.wrap, par: c.par, chi: diff }
+        dest.push { unwrap: c.wrap, par: c.par, chi: null, seq: c.seq }
+        dest.push { wrap: c.wrap, par: c.par, chi: diff, seq: c.seq }
     # not same parent right applies the new one
     else if type == 'right'
       dest.push tree.invertComponent otherC
@@ -153,15 +153,15 @@ tree.transformWrap = (dest, c, otherC, type) ->
     # same children... nest them
     else if ldiff.length == 0 and rdiff.length == 0
       if type == 'left'
-        dest.push { wrap: c.wrap, par: c.par, chi: [otherC.wrap] }
+        dest.push { wrap: c.wrap, par: c.par, chi: [otherC.wrap], seq: c.seq }
       else
-        dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
+        dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi, seq: c.seq }
     # c.chi is a subset of otherC.chi... c.wrap is nested
     else if ldiff.length == 0
-      dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi }
+      dest.push { wrap: c.wrap, par: otherC.wrap, chi: c.chi, seq: c.seq }
     # otherC.chi is a subset of c.chi... otherC.wrap is nested
     else if rdiff.length == 0
-      dest.push { wrap: c.wrap, par: otherC.par, chi: ldiff.concat otherC.wrap }
+      dest.push { wrap: c.wrap, par: otherC.par, chi: (ldiff.concat otherC.wrap), seq: c.seq }
     # else there is an intersection.... Need to figure out cloning to work right
     else
       dest.push c
