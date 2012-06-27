@@ -47,7 +47,7 @@ tree.checkValidComponent = (c) ->
     else
       throw new Error "Don't try to modify nodes directly."
   else
-    throw new Error "Component should contain tn, wrap, unwrap, cn or dn attrs" unless c.tn or c.wrap or c.unwrap or c.cn or c.dn
+    throw new Error "Component should contain tn, wrap, unwrap, cn or dn attrs" unless c.tn or c.wrap or c.unwrap or c.cn or c.dn or c.blah != null or c.del
 
 tree.compose = (op1, op2) ->
   tree.checkValidOp op1
@@ -78,7 +78,23 @@ tree.transformComponent = (dest, c, otherC, type) ->
   else if c.si or c.sd
     if otherC.on or otherC.nn
       tree.transformStringManipL dest, c, otherC, type
-
+  else if c.cn
+    if otherC.cn
+      tree.transformCreateNode dest, c, otherC, type
+    else
+      dest.push c
+  else if c.seq 
+    if otherC.seq
+      tree.transformSeq dest, c, otherC, type
+    else
+      dest.push c
+  else if c.ref
+    if otherC.cn
+      tree.transformRef dest, c, otherC, type
+    else
+      dest.push c
+  else if c.del
+    dest.push c
   # Probably need to do some things with create/delete node
   else
     json.transformComponent dest, c, otherC, type
@@ -88,6 +104,29 @@ difference = (a, b) ->
   for x in a
     diff.push x if -1 == b.indexOf x
   diff
+
+tree.transformCreateNode = (dest, c, otherC, type) ->
+  if otherC.cn <= c.cn and type == 'right'
+      dest.push { cn: c.cn + 1, value: c.value }
+  else
+    dest.push c
+
+tree.transformSeq = (dest, c, otherC, type) ->
+  if type == 'right'
+    dest.push { cn: otherC.seq, value: 'seq' }
+  else
+    dest.push { cn: c.seq, value: 'seq' }
+
+tree.transformRef = (dest, c, otherC, type) ->
+  # technically not needed to check 'right' because should always
+  # have created all nums under ref before referencing
+  # and right side op(CreateNode) get incremented.
+  if otherC.cn <= c.ref and type == 'right'
+    dest.push { ref: c.ref + 1 }
+  else
+    dest.push c
+
+
 
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
