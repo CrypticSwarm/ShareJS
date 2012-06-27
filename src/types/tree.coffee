@@ -111,6 +111,23 @@ tree.transformCreateNode = (dest, c, otherC, type) ->
   else
     dest.push c
 
+tree.transformWrapRef = (dest, c, otherC, type) ->
+  c = clone c
+  # not needed to check right.
+  # any cn should already be incremented.
+  # due to the fact that any references
+  # need to be made after create
+  if c.wrap != undefined and otherC.cn <= c.wrap
+    c.wrap += 1
+  if c.unwrap != undefined and otherC.cn <= c.unwrap
+    c.unwrap += 1
+  if otherC.cn <= c.par
+    c.par += 1
+  for ref, loc in c.chi
+    if otherC.cn <= ref
+      c.chi[loc] += 1
+  dest.push c
+
 tree.transformSeq = (dest, c, otherC, type) ->
   if type == 'right'
     dest.push { cn: otherC.seq, value: 'seq' }
