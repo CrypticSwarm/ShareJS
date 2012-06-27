@@ -206,6 +206,33 @@ tree.transformWrap = (dest, c, otherC, type) ->
   dest
 
 tree.transformUnwrap = (dest, c, otherC, type) ->
+  if c.unwrap == otherC.unwrap
+    ldiff = difference c.chi, otherC.chi
+    #rdiff = difference otherC.chi, c.chi
+    if ldiff.length != 0
+      inverted = tree.invertComponent otherC
+      inverted.seq = c.seq
+      dest.push inverted
+      dest.push { unwrap: c.unwrap, par: c.par, chi: (ldiff.concat otherC.chi), seq: c.seq }
+  # chained op otherC's target is on top
+  else if -1 != ind = otherC.chi.indexOf c.unwrap
+    inverted = tree.invertComponent otherC
+    inverted.seq = c.seq
+    newOp = clone otherC
+    Array::splice.apply newOp.chi, [ind, 1].concat c.chi
+    dest.push inverted
+    dest.push c
+    dest.push newOp
+  # chained c's target is on top 
+  else if -1  != ind = c.chi.indexOf otherC.unwrap
+    newOp = clone c
+    Array::splice.apply newOp.chi, [ind, 1].concat otherC.chi
+    dest.push newOp
+  # disjoint ops add unchanged
+  else
+    dest.push c
+  dest
+
 
 # c -> si/sd, otherC -> split/merge
 tree.transformStringManipL = (dest, c, otherC, type) ->
