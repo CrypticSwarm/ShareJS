@@ -254,10 +254,10 @@ tree.applyUnwrap = (snapshot, c) ->
   unwrap.parent = null
 
 tree.applyCreateNode = (snapshot, c) ->
-  snapshot[c.cn] = {parent: c.par, value: c.val}
+  snapshot.splice(c.cn, 0, { parent: null, value: c.val })
 
 tree.applyDeleteNode = (snapshot, c) ->
-  # Probably should check that the current parent and value is correct.
+  # Probably should check that the current value and value is correct.
   delete snapshot[c.dn]
 
 if WEB?
