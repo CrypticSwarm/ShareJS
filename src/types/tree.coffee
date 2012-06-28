@@ -62,8 +62,8 @@ tree.transformComponent = (dest, c, otherC, type) ->
   if c.wrap
     if otherC.wrap
       tree.transformWrap dest, c, otherC, type
-    else if otherC.nn or otherC.on
-      tree.transformWrapSplitL dest, c, otherC, type
+#   else if otherC.nn or otherC.on
+#     tree.transformWrapSplitL dest, c, otherC, type
     else if otherC.cn
       tree.transformWrapRef dest, c, otherC, type
     else if otherC.unwrap
@@ -72,47 +72,34 @@ tree.transformComponent = (dest, c, otherC, type) ->
       dest.push c
   else if c.unwrap
     if otherC.unwrap
-      tree.transformWrap dest, c, otherC, type
+      tree.transformUnwrap dest, c, otherC, type
     else if otherC.wrap
       tree.transformWrapUnwrap dest, c, otherC, type
     else if otherC.cn
       tree.transformWrapRef dest, c, otherC, type
     else
       dest.push c
-  else if c.on or c.nn
-    if otherC.si or otherC.sd
-      tree.transformStringManipR dest, c, otherC, type
-    else if otherC.nn or otherC.on
-      tree.transformSplitMergeR dest, c, otherC, type
-    else if otherC.wrap
-      tree.transformWrapSplitR dest, c, otherC, type
-    else
-      dest.push c
-  else if c.si or c.sd
-    if otherC.on or otherC.nn
-      tree.transformStringManipL dest, c, otherC, type
-    else if otherC.p?.length > 1
-      json.transformComponent dest, c, otherC, type
-    else
-      dest.push c
+# else if c.on or c.nn
+#   if otherC.si or otherC.sd
+#     tree.transformStringManipR dest, c, otherC, type
+#   else if otherC.nn or otherC.on
+#     tree.transformSplitMergeR dest, c, otherC, type
+#   else if otherC.wrap
+#     tree.transformWrapSplitR dest, c, otherC, type
+#   else
+#     dest.push c
+# else if c.si or c.sd
+#   if otherC.on or otherC.nn
+#     tree.transformStringManipL dest, c, otherC, type
+#   else if otherC.p?.length > 1
+#     json.transformComponent dest, c, otherC, type
+#   else
+#     dest.push c
   else if c.cn
     if otherC.cn
       tree.transformCreateNode dest, c, otherC, type
     else
       dest.push c
-  else if c.seq 
-    if otherC.seq
-      tree.transformSeq dest, c, otherC, type
-    else
-      dest.push c
-  else if c.ref
-    if otherC.cn
-      tree.transformRef dest, c, otherC, type
-    else
-      dest.push c
-  else if c.del
-    dest.push c
-  # Probably need to do some things with create/delete node
   else
     json.transformComponent dest, c, otherC, type
 
@@ -144,23 +131,6 @@ tree.transformWrapRef = (dest, c, otherC, type) ->
     if otherC.cn <= ref
       c.chi[loc] += 1
   dest.push c
-
-tree.transformSeq = (dest, c, otherC, type) ->
-  if type == 'right'
-    dest.push { cn: otherC.seq, value: 'seq' }
-  else
-    dest.push { cn: c.seq, value: 'seq' }
-
-tree.transformRef = (dest, c, otherC, type) ->
-  # technically not needed to check 'right' because should always
-  # have created all nums under ref before referencing
-  # and right side op(CreateNode) get incremented.
-  if otherC.cn <= c.ref and type == 'right'
-    dest.push { ref: c.ref + 1 }
-  else
-    dest.push c
-
-
 
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
