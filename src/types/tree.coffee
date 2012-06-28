@@ -109,6 +109,12 @@ difference = (a, b) ->
     diff.push x if -1 == b.indexOf x
   diff
 
+intersect = (a, b) ->
+  same = []
+  for x in a
+    same.push x if -1 != b.indexOf x
+  same
+
 tree.transformCreateNode = (dest, c, otherC, type) ->
   if otherC.cn <= c.cn and type == 'right'
       dest.push { cn: c.cn + 1, value: c.value }
@@ -168,7 +174,17 @@ tree.transformWrap = (dest, c, otherC, type) ->
       dest.push { wrap: c.wrap, par: otherC.par, chi: (ldiff.concat otherC.wrap), seq: c.seq }
     # else there is an intersection.... Need to figure out cloning to work right
     else
-      dest.push c
+      same = intersect c.chi, otherC.chi
+      if type == 'right'
+        dest.push { unwrap: otherC.wrap, par: otherC.par, chi: same, seq: c.seq }
+        dest.push { wrap: otherC.wrap, par: otherC.par, chi: [], seq: c.seq }
+        dest.push { wrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq }
+        dest.push { cn: c.seq, value: null, ref: otherC.wrap }
+        dest.push { wrap: c.seq, par: c.wrap, chi: same, seq: c.seq + 1 }
+      else
+        dest.push { wrap: c.wrap, par: c.par, chi: ldiff, seq: c.seq }
+        dest.push { cn: c.seq, value: null, ref: c.wrap }
+        dest.push { wrap: c.seq, par: otherC.wrap, chi: same, seq: c.seq + 1 }
   # diff target, diff parents, c is unchanged
   else
     dest.push c
