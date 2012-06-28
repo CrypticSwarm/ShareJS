@@ -29,8 +29,8 @@ tree.invertComponent = (c) ->
     c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
     c_ = { unwrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq } if c.wrap
     c_ = { wrap: c.unwrap, par: c.par, chi: c.chi, seq: c.seq } if c.unwrap
-    c_ = { dn: c.cn, val: c.val } if c.cn
-    c_ = { cn: c.dn, val: c.val } if c.dn
+    c_ = { dn: c.cn, value: c.value } if c.cn
+    c_ = { cn: c.dn, value: c.value } if c.dn
   c_
 
 tree.checkValidOp = (op) ->
@@ -223,7 +223,12 @@ tree.apply = (snapshot, op) ->
   tree.checkValidOp op
   op = clone op
 
-  container = {data: clone snapshot}
+  # Removed cloning of snapshot....
+  # currently relies on references in parents might have to switch 
+  # to index based, but that requires every insert to update all 
+  # parents further down. Usually this isn't big, but children 
+  # might get involved later.
+  container = {data: snapshot}
   for c in op
     tree.applyComponent container, c
 
@@ -265,27 +270,27 @@ tree.applyMerge = (snapshot, c) ->
 tree.applyWrap = (snapshot, c) ->
   wrap = snapshot[c.wrap]
   par = snapshot[c.par]
-  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == c.par
+  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == par
   throw new Error "Op(Wrap): Target's for wrap should exist." unless wrap
   throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == null
   throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = c.wrap
-  wrap.parent = c.par
+    c.chi.map (child) -> snapshot[child].parent = wrap
+  wrap.parent = par
 
 tree.applyUnwrap = (snapshot, c) ->
   unwrap = snapshot[c.unwrap]
   par = snapshot[c.par]
   chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == c.unwrap
   throw new Error "Op(Unwrap): Target should exist." unless unwrap
-  throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == c.par
-  throw new Error "Op(Wrap): all children's parent should equal unwrap" unless chiOk
+  throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == par
+  throw new Error "Op(Unwrap): all children's parent should equal unwrap" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = c.par
+    c.chi.map (child) -> snapshot[child].parent = par
   unwrap.parent = null
 
 tree.applyCreateNode = (snapshot, c) ->
-  snapshot.splice(c.cn, 0, { parent: null, value: c.val })
+  snapshot.splice(c.cn, 0, { parent: null, value: c.value })
 
 tree.applyDeleteNode = (snapshot, c) ->
   # Probably should check that the current value and value is correct.
