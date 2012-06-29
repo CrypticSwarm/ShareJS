@@ -219,6 +219,38 @@ tree.transformUnwrap = (dest, c, otherC, type) ->
     dest.push c
   dest
 
+tree.transformWrapUnwrap = (dest, c, otherC, type) ->
+  ins = c if c.wrap?
+  ins = otherC if otherC.wrap?
+  del = c if c.unwrap?
+  del = otherC if otherC.unwrap?
+  # ins is on top
+  if -1 != idx = ins.chi.indexOf del.unwrap
+    if c == ins
+      newOp = { wrap: c.wrap, par: c.par, chi: c.chi.slice(), seq: c.seq }
+      Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
+      dest.push newOp
+    else
+      newOp = { wrap: otherC.wrap, par: otherC.par, chi: otherC.chi.slice(), seq: c.seq }
+      Array::splice.apply newOp.chi, [idx, 1].concat c.chi
+      dest.push tree.invertComponent otherC
+      dest.push c
+      dest.push newOp 
+  # ins is on bottom
+  # For now make it easy and assume that if the insert
+  # was already there that it wanted to eject it also.
+  else if ins.par == del.unwrap
+    ddiff = difference del.chi, ins.chi
+    if c == ins
+      dest.push tree.invertComponent otherC
+      dest.push c
+      dest.push { unwrap: otherC.unwrap, par: otherC.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
+    else
+      dest.push { unwrap: c.unwrap, par: c.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
+  # disjoint
+  else
+    dest.push c
+  dest
 
 # c -> si/sd, otherC -> split/merge
 tree.transformStringManipL = (dest, c, otherC, type) ->
