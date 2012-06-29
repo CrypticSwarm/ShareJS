@@ -276,7 +276,7 @@ tree.apply = (snapshot, op) ->
   # to index based, but that requires every insert to update all 
   # parents further down. Usually this isn't big, but children 
   # might get involved later.
-  container = {data: snapshot}
+  container = {data: clone snapshot}
   for c in op
     tree.applyComponent container, c
 
@@ -318,27 +318,31 @@ tree.applyMerge = (snapshot, c) ->
 tree.applyWrap = (snapshot, c) ->
   wrap = snapshot[c.wrap]
   par = snapshot[c.par]
-  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == par
+  chiOk = not c.chi or c.chi.every (child) -> snapshot[child].parent == c.par
   throw new Error "Op(Wrap): Target's for wrap should exist." unless wrap
   throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == null
   throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = wrap
-  wrap.parent = par
+    c.chi.map (child) -> snapshot[child].parent = c.wrap
+  wrap.parent = c.par
 
 tree.applyUnwrap = (snapshot, c) ->
   unwrap = snapshot[c.unwrap]
   par = snapshot[c.par]
-  chiOk = not c.chi or c.chi.map (child) -> snapshot[child].parent == c.unwrap
+  chiOk = not c.chi or c.chi.every (child) -> snapshot[child].parent == c.unwrap
   throw new Error "Op(Unwrap): Target should exist." unless unwrap
-  throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == par
+  throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == c.par
   throw new Error "Op(Unwrap): all children's parent should equal unwrap" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = par
+    c.chi.map (child) -> snapshot[child].parent = c.par
   unwrap.parent = null
 
 tree.applyCreateNode = (snapshot, c) ->
   snapshot.splice(c.cn, 0, { parent: null, value: c.value })
+  snapshot.forEach (node) ->
+    node.parent += 1 if node.parent >= c.cn
+#   node.chi.forEach (chi, index) ->
+#     node.chi[index] += 1 if chi <= c.cn
 
 tree.applyDeleteNode = (snapshot, c) ->
   # Probably should check that the current value and value is correct.

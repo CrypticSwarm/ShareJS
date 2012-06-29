@@ -3,7 +3,7 @@ tree = require '../../src/types/tree'
 
 # Checks two ops applied to two starting docs
 # Then exchanged yield the same document.
-exchangeOps = (desc, state, cop1, sop1, init, parentList) ->
+exchangeOps = (desc, state, cop1, sop1, init, expectedParentList) ->
   test desc, (t) ->
     server = JSON.parse JSON.stringify state
     client = JSON.parse JSON.stringify state
@@ -17,8 +17,9 @@ exchangeOps = (desc, state, cop1, sop1, init, parentList) ->
     server = tree.apply server, sop2
     client = tree.apply client, cop2
     t.same client, server
-    t.same parentList, client.map (node, index) ->
-      client.indexOf node.parent
+    parentList = client.map (node, index) ->
+      (not node.parent? and -1) or node.parent
+    t.same parentList, expectedParentList
     do t.end
 
 state = [ { parent: null, value: 'root' },
