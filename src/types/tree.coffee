@@ -323,7 +323,10 @@ tree.applyWrap = (snapshot, c) ->
   throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == null
   throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = c.wrap
+    c.chi.forEach (child) ->
+      snapshot[child].parent = c.wrap
+      if -1 == wrap.chi.indexOf child
+        wrap.chi.push child
   wrap.parent = c.par
 
 tree.applyUnwrap = (snapshot, c) ->
@@ -334,11 +337,15 @@ tree.applyUnwrap = (snapshot, c) ->
   throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == c.par
   throw new Error "Op(Unwrap): all children's parent should equal unwrap" unless chiOk
   if c.chi
-    c.chi.map (child) -> snapshot[child].parent = c.par
+    c.chi.forEach (child) ->
+      snapshot[child].parent = c.par
+      idx = unwrap.chi.indexOf child
+      throw new Error "Op(Unwrap): Node# #{c.unwrap} should contain #{child} as a child" if idx == -1
+      unwrap.chi.splice idx, 1
   unwrap.parent = null
 
 tree.applyCreateNode = (snapshot, c) ->
-  snapshot.splice(c.cn, 0, { parent: null, value: c.value })
+  snapshot.splice(c.cn, 0, { parent: null, value: c.value, chi: [] })
   snapshot.forEach (node) ->
     node.parent += 1 if node.parent >= c.cn
 #   node.chi.forEach (chi, index) ->
