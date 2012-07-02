@@ -46,11 +46,15 @@ genRandomComponent = (state) ->
       { unwrap: num, par: par, chi: chi, seq: state.length }
 
 
-randTests = (startState, numTests) ->
-  test "Randomized Op Test", (t) ->
-    for tx in [0..numTests]
-      server = JSON.parse JSON.stringify state
-      client = JSON.parse JSON.stringify state
+randTests = (startState, numTests, style) ->
+  server = JSON.parse JSON.stringify state
+  client = JSON.parse JSON.stringify state
+  msg = "Randomized op test " + style + " state"
+  for tx in [0..numTests]
+    test msg, (t) ->
+      if style == 'fresh'
+        server = JSON.parse JSON.stringify state
+        client = JSON.parse JSON.stringify state
       cop1 = []
       sop1 = []
       locS = []
@@ -70,7 +74,7 @@ randTests = (startState, numTests) ->
       server = tree.apply server, sop2
       client = tree.apply client, cop2
       t.same client, server
-    do t.end
+      do t.end
 
 
 state = [ { parent: -1, value: 'root', chi: [] },
@@ -85,7 +89,8 @@ initops = [ { wrap: 1, par: 0, chi: [], seq: 6 },
             { wrap: 3, par: 0, chi: [], seq: 6 } ]
 
 
-randTests state, 10
+randTests state, 300, 'continuous'
+randTests state, 300, 'fresh'
 
 ## Wrap
 
