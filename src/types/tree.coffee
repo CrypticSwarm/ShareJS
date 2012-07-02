@@ -145,8 +145,13 @@ tree.transformWrapRef = (dest, c, otherC, type) ->
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
 tree.transformWrap = (dest, c, otherC, type) ->
+  # Direct circle ref don't allow
+  if c.wrap == otherC.par and otherC.wrap == c.par
+    if type == 'left'
+      dest.push tree.invertComponent otherC
+      dest.push c
   # same target node
-  if c.wrap == otherC.wrap
+  else if c.wrap == otherC.wrap
     # same parent grab all children
     if c.par == otherC.par
       diff = difference c.chi, otherC.chi
@@ -195,7 +200,11 @@ tree.transformWrap = (dest, c, otherC, type) ->
   dest
 
 tree.transformUnwrap = (dest, c, otherC, type) ->
-  if c.unwrap == otherC.unwrap
+  if c.unwrap == otherC.par and otherC.unwrap == c.par
+    if type == 'left'
+      dest.push tree.invertComponent otherC
+      dest.push c
+  else if c.unwrap == otherC.unwrap
     ldiff = difference c.chi, otherC.chi
     #rdiff = difference otherC.chi, c.chi
     if ldiff.length != 0
