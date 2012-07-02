@@ -156,8 +156,9 @@ tree.transformWrap = (dest, c, otherC, type) ->
     if c.par == otherC.par
       diff = difference c.chi, otherC.chi
       if diff.length != 0
-        dest.push { unwrap: c.wrap, par: c.par, chi: null, seq: c.seq }
-        dest.push { wrap: c.wrap, par: c.par, chi: diff, seq: c.seq }
+        for node in diff
+          dest.push { unwrap: node, par: c.par, chi: [], seq: c.seq }
+          dest.push { wrap: node, par: c.wrap, chi: [], seq: c.seq }
     # not same parent right applies the new one
     else if type == 'left'
       dest.push tree.invertComponent otherC
@@ -208,10 +209,9 @@ tree.transformUnwrap = (dest, c, otherC, type) ->
     ldiff = difference c.chi, otherC.chi
     #rdiff = difference otherC.chi, c.chi
     if ldiff.length != 0
-      inverted = tree.invertComponent otherC
-      inverted.seq = c.seq
-      dest.push inverted
-      dest.push { unwrap: c.unwrap, par: c.par, chi: (ldiff.concat otherC.chi), seq: c.seq }
+      for node in ldiff
+        dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
+        dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
   # chained op otherC's target is on top
   else if -1 != ind = otherC.chi.indexOf c.unwrap
     dest.push { unwrap: c.unwrap, par: otherC.par, chi: c.chi, seq: c.seq }
@@ -244,9 +244,12 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
   else if ins.par == del.unwrap
     ddiff = difference del.chi, ins.chi
     if c == ins
-      dest.push tree.invertComponent otherC
-      dest.push c
-      dest.push { unwrap: otherC.unwrap, par: otherC.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
+      cdiff = difference ins.chi, del.chi
+      same = intersect ins.chi, del.chi
+      dest.push { wrap: c.wrap, par: otherC.par, chi: same, seq: c.seq }
+      for node in cdiff
+        dest.push { unwrap: node, par: otherC.unwrap, chi: [], seq: c.seq }
+        dest.push { wrap: node, par: c.wrap, chi: [], seq: c.seq }
     else
       dest.push { unwrap: c.unwrap, par: c.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
   # disjoint
