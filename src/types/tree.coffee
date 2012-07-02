@@ -286,14 +286,13 @@ tree.apply = (snapshot, op) ->
   # to index based, but that requires every insert to update all 
   # parents further down. Usually this isn't big, but children 
   # might get involved later.
-  container = {data: clone snapshot}
+  snapshot = clone snapshot
   for c in op
-    tree.applyComponent container, c
+    tree.applyComponent snapshot, c
+  snapshot
 
-  container.data
 
-tree.applyComponent = (container, c) ->
-  snapshot = container.data
+tree.applyComponent = (snapshot, c) ->
   if c.nn
     tree.applySplit snapshot, c
   else if c.on
@@ -307,7 +306,7 @@ tree.applyComponent = (container, c) ->
   else if c.dn?
     tree.applyDeleteNode snapshot, c
   else 
-    json.applyComponent container, c
+    json.applyComponent {data: snapshot}, c
   snapshot
 
 tree.applySplit = (snapshot, c) ->
