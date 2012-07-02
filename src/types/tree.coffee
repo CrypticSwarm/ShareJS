@@ -320,13 +320,23 @@ tree.applyWrap = (snapshot, c) ->
   par = snapshot[c.par]
   chiOk = not c.chi or c.chi.every (child) -> snapshot[child].parent == c.par
   throw new Error "Op(Wrap): Target's for wrap should exist." unless wrap
-  throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == null
+  throw new Error "Op(Wrap): Target's for wrap shouldn't have a parent. (#{wrap.parent})" unless wrap.parent == -1
   throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
+  throw new Error "Op(Wrap): Wrap shouldn't be a child of parent." unless -1 == par.chi.indexOf c.wrap
   if c.chi
     c.chi.forEach (child) ->
+      idx = wrap.chi.indexOf child
+      parChildId = par.chi.indexOf child
+      throw new Error "Op(Wrap): Node# #{c.par} should contain #{child} before removal as a child" unless parChildId != -1
+      throw new Error "Op(Wrap): Node# #{c.wrap} shouldn't contain #{child} as a child" unless idx == -1
+      par.chi.splice parChildId, 1
       snapshot[child].parent = c.wrap
-      if -1 == wrap.chi.indexOf child
-        wrap.chi.push child
+      wrap.chi.push child
+
+  par.chi.push c.wrap
+  # for now help ensure same by sorting
+  do par.chi.sort
+  do wrap.chi.sort
   wrap.parent = c.par
 
 tree.applyUnwrap = (snapshot, c) ->
@@ -338,18 +348,22 @@ tree.applyUnwrap = (snapshot, c) ->
   throw new Error "Op(Unwrap): all children's parent should equal unwrap" unless chiOk
   if c.chi
     c.chi.forEach (child) ->
-      snapshot[child].parent = c.par
       idx = unwrap.chi.indexOf child
-      throw new Error "Op(Unwrap): Node# #{c.unwrap} should contain #{child} as a child" if idx == -1
+      throw new Error "Op(Unwrap): Node# #{c.unwrap} should contain #{child} as a child" unless idx != -1
+      par.chi.push child
+      snapshot[child].parent = c.par
       unwrap.chi.splice idx, 1
-  unwrap.parent = null
+  par.chi.splice (par.chi.indexOf c.unwrap), 1
+  do par.chi.sort
+  do unwrap.chi.sort
+  unwrap.parent = -1
 
 tree.applyCreateNode = (snapshot, c) ->
-  snapshot.splice(c.cn, 0, { parent: null, value: c.value, chi: [] })
+  snapshot.splice(c.cn, 0, { parent: -1, value: c.value, chi: [] })
   snapshot.forEach (node) ->
     node.parent += 1 if node.parent >= c.cn
-#   node.chi.forEach (chi, index) ->
-#     node.chi[index] += 1 if chi <= c.cn
+    node.chi.forEach (chi, index) ->
+      node.chi[index] += 1 if chi >= c.cn
 
 tree.applyDeleteNode = (snapshot, c) ->
   # Probably should check that the current value and value is correct.
