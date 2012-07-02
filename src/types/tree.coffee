@@ -79,6 +79,7 @@ tree.transformComponent = (dest, c, otherC, type) ->
       tree.transformWrapRef dest, c, otherC, type
     else
       dest.push c
+      dest
 # else if c.on or c.nn
 #   if otherC.si or otherC.sd
 #     tree.transformStringManipR dest, c, otherC, type
@@ -100,6 +101,7 @@ tree.transformComponent = (dest, c, otherC, type) ->
       tree.transformCreateNode dest, c, otherC, type
     else
       dest.push c
+      dest
   else
     json.transformComponent dest, c, otherC, type
 
@@ -120,6 +122,7 @@ tree.transformCreateNode = (dest, c, otherC, type) ->
       dest.push { cn: c.cn + 1, value: c.value }
   else
     dest.push c
+  dest
 
 tree.transformWrapRef = (dest, c, otherC, type) ->
   c = clone c
@@ -137,6 +140,7 @@ tree.transformWrapRef = (dest, c, otherC, type) ->
     if otherC.cn <= ref
       c.chi[loc] += 1
   dest.push c
+  dest
 
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
@@ -188,7 +192,6 @@ tree.transformWrap = (dest, c, otherC, type) ->
   # diff target, diff parents, c is unchanged
   else
     dest.push c
-
   dest
 
 tree.transformUnwrap = (dest, c, otherC, type) ->
