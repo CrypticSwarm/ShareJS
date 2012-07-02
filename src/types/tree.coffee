@@ -272,6 +272,11 @@ tree.transformWrapSplitL = (dest, c, otherC, type) ->
 # c -> split/merge, otherC -> wrap
 tree.transformWrapSplitR = (dest, c, otherC, type) ->
 
+compareNum = (a, b) ->
+  -1 if a < b
+  0  if a == b
+  1 if a > b
+
 tree.apply = (snapshot, op) ->
   tree.checkValidOp op
   op = clone op
@@ -340,8 +345,8 @@ tree.applyWrap = (snapshot, c) ->
 
   par.chi.push c.wrap
   # for now help ensure same by sorting
-  do par.chi.sort
-  do wrap.chi.sort
+  par.chi.sort compareNum
+  wrap.chi.sort compareNum
   wrap.parent = c.par
 
 tree.applyUnwrap = (snapshot, c) ->
@@ -359,8 +364,8 @@ tree.applyUnwrap = (snapshot, c) ->
       snapshot[child].parent = c.par
       unwrap.chi.splice idx, 1
   par.chi.splice (par.chi.indexOf c.unwrap), 1
-  do par.chi.sort
-  do unwrap.chi.sort
+  par.chi.sort compareNum
+  unwrap.chi.sort compareNum
   unwrap.parent = -1
 
 tree.applyCreateNode = (snapshot, c) ->
