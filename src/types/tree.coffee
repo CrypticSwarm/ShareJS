@@ -25,12 +25,12 @@ tree.invertComponent = (c) ->
   if c.p?.length > 0
     c_ = json.invertComponent c
   else
-    c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn
-    c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on
-    c_ = { unwrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq } if c.wrap
-    c_ = { wrap: c.unwrap, par: c.par, chi: c.chi, seq: c.seq } if c.unwrap
-    c_ = { dn: c.cn, value: c.value } if c.cn
-    c_ = { cn: c.dn, value: c.value } if c.dn
+    c_ = { tn: c.tn, on: c.nn, len: c.pos } if c.nn?
+    c_ = { tn: c.tn, nn: c.on, pos: c.len } if c.on?
+    c_ = { unwrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq } if c.wrap?
+    c_ = { wrap: c.unwrap, par: c.par, chi: c.chi, seq: c.seq } if c.unwrap?
+    c_ = { dn: c.cn, value: c.value } if c.cn?
+    c_ = { cn: c.dn, value: c.value } if c.dn?
   c_
 
 tree.checkValidOp = (op) ->
@@ -59,23 +59,23 @@ tree.append = (dest, c) -> dest.push c
 
 # dispatches based off the types of each component.
 tree.transformComponent = (dest, c, otherC, type) ->
-  if c.wrap
-    if otherC.wrap
+  if c.wrap?
+    if otherC.wrap?
       tree.transformWrap dest, c, otherC, type
 #   else if otherC.nn or otherC.on
 #     tree.transformWrapSplitL dest, c, otherC, type
-    else if otherC.cn
+    else if otherC.cn?
       tree.transformWrapRef dest, c, otherC, type
-    else if otherC.unwrap
+    else if otherC.unwrap?
       tree.transformWrapUnwrap dest, c, otherC, type
     else
       dest.push c
-  else if c.unwrap
-    if otherC.unwrap
+  else if c.unwrap?
+    if otherC.unwrap?
       tree.transformUnwrap dest, c, otherC, type
-    else if otherC.wrap
+    else if otherC.wrap?
       tree.transformWrapUnwrap dest, c, otherC, type
-    else if otherC.cn
+    else if otherC.cn?
       tree.transformWrapRef dest, c, otherC, type
     else
       dest.push c
@@ -95,8 +95,8 @@ tree.transformComponent = (dest, c, otherC, type) ->
 #     json.transformComponent dest, c, otherC, type
 #   else
 #     dest.push c
-  else if c.cn
-    if otherC.cn
+  else if c.cn?
+    if otherC.cn?
       tree.transformCreateNode dest, c, otherC, type
     else
       dest.push c
@@ -288,13 +288,13 @@ tree.applyComponent = (container, c) ->
     tree.applySplit snapshot, c
   else if c.on
     tree.applyMerge snapshot, c
-  else if c.wrap
+  else if c.wrap?
     tree.applyWrap snapshot, c
-  else if c.unwrap
+  else if c.unwrap?
     tree.applyUnwrap snapshot, c
-  else if c.cn
+  else if c.cn?
     tree.applyCreateNode snapshot, c
-  else if c.dn
+  else if c.dn?
     tree.applyDeleteNode snapshot, c
   else 
     json.applyComponent container, c
