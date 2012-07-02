@@ -105,13 +105,13 @@ exchangeOps "T(Wrap, Wrap) same target, diff parent.", state,
   [ { wrap: 4, par: 1, chi: [], seq: 6 } ],
   [ { wrap: 4, par: 0, chi: [2], seq: 6 } ],
   initops,
-  [-1, 0, 4, 0, 0, -1]
+  [-1, 0, 0, 0, 1, -1]
 
 exchangeOps "T(Wrap, Wrap) same target, diff parent.", state,
   [ { wrap: 4, par: 0, chi: [2], seq: 6 } ],
   [ { wrap: 4, par: 1, chi: [], seq: 6 } ],
   initops,
-  [-1, 0, 0, 0, 1, -1]
+  [-1, 0, 4, 0, 0, -1]
 
 exchangeOps "T(Wrap, Wrap) diff target, diff parent.", state,
   [ { wrap: 5, par: 1, chi: [], seq: 6 } ],
@@ -141,7 +141,7 @@ exchangeOps "T(Wrap, Wrap) diff target, same parent children intersect.", state,
   [ { wrap: 5, par: 0, chi: [1,2], seq: 6 } ],
   [ { wrap: 4, par: 0, chi: [2,3], seq: 6 } ],
   initops,
-  [-1, 5, 6, 4, 0, 0, 4]
+  [-1, 5, 6, 4, 0, 0, 5]
 
 
 ## Unwrap
@@ -211,7 +211,7 @@ exchangeOps "T(Create, Create) nested targets.", state,
     { wrap: 7, par: 6, chi: [2], seq: 8 }
   ],
   initops,
-  [-1, 8, 9, 0, -1, -1, -1, 6, 0, 8]
+  [-1, 6, 7, 0, -1, -1, 0, 6, -1, 8]
 
 ## Wrap vs Unwrap
 

@@ -118,7 +118,7 @@ intersect = (a, b) ->
   same
 
 tree.transformCreateNode = (dest, c, otherC, type) ->
-  if otherC.cn <= c.cn and type == 'right'
+  if otherC.cn <= c.cn and type == 'left'
       dest.push { cn: c.cn + 1, value: c.value }
   else
     dest.push c
@@ -154,7 +154,7 @@ tree.transformWrap = (dest, c, otherC, type) ->
         dest.push { unwrap: c.wrap, par: c.par, chi: null, seq: c.seq }
         dest.push { wrap: c.wrap, par: c.par, chi: diff, seq: c.seq }
     # not same parent right applies the new one
-    else if type == 'right'
+    else if type == 'left'
       dest.push tree.invertComponent otherC
       dest.push c
   # diff target node, but same parents
@@ -179,7 +179,7 @@ tree.transformWrap = (dest, c, otherC, type) ->
     # else there is an intersection.... Need to figure out cloning to work right
     else
       same = intersect c.chi, otherC.chi
-      if type == 'right'
+      if type == 'left'
         dest.push { unwrap: otherC.wrap, par: otherC.par, chi: same, seq: c.seq }
         dest.push { wrap: otherC.wrap, par: otherC.par, chi: [], seq: c.seq }
         dest.push { wrap: c.wrap, par: c.par, chi: c.chi, seq: c.seq }
