@@ -214,13 +214,7 @@ tree.transformUnwrap = (dest, c, otherC, type) ->
       dest.push { unwrap: c.unwrap, par: c.par, chi: (ldiff.concat otherC.chi), seq: c.seq }
   # chained op otherC's target is on top
   else if -1 != ind = otherC.chi.indexOf c.unwrap
-    inverted = tree.invertComponent otherC
-    inverted.seq = c.seq
-    newOp = clone otherC
-    Array::splice.apply newOp.chi, [ind, 1].concat c.chi
-    dest.push inverted
-    dest.push c
-    dest.push newOp
+    dest.push { unwrap: c.unwrap, par: otherC.par, chi: c.chi, seq: c.seq }
   # chained c's target is on top 
   else if -1  != ind = c.chi.indexOf otherC.unwrap
     newOp = clone c
@@ -243,11 +237,7 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
       Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
       dest.push newOp
     else
-      newOp = { wrap: otherC.wrap, par: otherC.par, chi: otherC.chi.slice(), seq: c.seq }
-      Array::splice.apply newOp.chi, [idx, 1].concat c.chi
-      dest.push tree.invertComponent otherC
-      dest.push c
-      dest.push newOp 
+      dest.push { unwrap: c.unwrap, par: otherC.wrap, chi: c.chi.slice(), seq: c.seq }
   # ins is on bottom
   # For now make it easy and assume that if the insert
   # was already there that it wanted to eject it also.
