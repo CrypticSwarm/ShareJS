@@ -1,5 +1,7 @@
 tree = require '../../src/types/tree'
 {test} = require 'tap'
+{randomInt, randomReal} = require('../helpers')
+randomWord = require './randomWord'
 
 # Checks two ops applied to two starting docs
 # Then exchanged yield the same document.
@@ -22,17 +24,68 @@ exchangeOps = (desc, state, cop1, sop1, init, expectedParentList) ->
     t.same parentList, expectedParentList
     do t.end
 
-state = [ { parent: null, value: 'root' },
-          { parent: null, value: 'a' },
-          { parent: null, value: 'b' },
-          { parent: null, value: 'c' },
-          { parent: null, value: 'x' },
-          { parent: null, value: 'y' } ]
+
+genRandomComponent = (state) ->
+  if randomReal() < .2 
+    { cn: state.length, value: randomWord() }
+  else
+    num = randomInt state.length
+    node = state[num]
+    if node.parent == -1
+      par = num
+      par = randomInt state.length while par == num or state[par].parent == num
+      chi = []
+      for child in state[par].chi
+        chi.push child if randomReal() < .3
+      { wrap: num, par: par, chi: chi, seq: state.length }
+    else
+      par = node.parent
+      chi = []
+      for child in node.chi
+        chi.push child if randomReal() < .3
+      { unwrap: num, par: par, chi: chi, seq: state.length }
+
+
+randTests = (startState, numTests) ->
+  test "Randomized Op Test", (t) ->
+    for tx in [0..numTests]
+      server = JSON.parse JSON.stringify state
+      client = JSON.parse JSON.stringify state
+      cop1 = []
+      sop1 = []
+      locS = []
+      locC = []
+      while randomReal() < .85
+        scomp = genRandomComponent server
+        server = tree.applyComponent server, scomp
+        locS.push scomp
+      while randomReal() < .85
+        ccomp = genRandomComponent client
+        client = tree.applyComponent client, ccomp
+        locC.push ccomp
+      tree.append sop1, c for c in locS
+      tree.append cop1, c for c in locC
+      cop2 = tree.transform sop1, cop1, 'right'
+      sop2 = tree.transform cop1, sop1, 'left'
+      server = tree.apply server, sop2
+      client = tree.apply client, cop2
+      t.same client, server
+    do t.end
+
+
+state = [ { parent: -1, value: 'root', chi: [] },
+          { parent: -1, value: 'a', chi: [] },
+          { parent: -1, value: 'b', chi: [] },
+          { parent: -1, value: 'c', chi: [] },
+          { parent: -1, value: 'x', chi: [] },
+          { parent: -1, value: 'y', chi: [] } ]
 
 initops = [ { wrap: 1, par: 0, chi: [], seq: 6 },
             { wrap: 2, par: 0, chi: [], seq: 6 },
             { wrap: 3, par: 0, chi: [], seq: 6 } ]
 
+
+randTests state, 10
 
 ## Wrap
 
