@@ -230,8 +230,10 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
   ins = otherC if otherC.wrap?
   del = c if c.unwrap?
   del = otherC if otherC.unwrap?
+  if del.unwrap == ins.par and ins.wrap == del.par
+    dest.push tree.invertComponent otherC
   # ins is on top
-  if -1 != idx = ins.chi.indexOf del.unwrap
+  else if -1 != idx = ins.chi.indexOf del.unwrap
     if c == ins
       newOp = { wrap: c.wrap, par: c.par, chi: c.chi.slice(), seq: c.seq }
       Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
