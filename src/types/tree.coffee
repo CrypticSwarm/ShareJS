@@ -59,6 +59,8 @@ tree.append = (dest, c) -> dest.push c
 
 # dispatches based off the types of each component.
 tree.transformComponent = (dest, c, otherC, type) ->
+  c = clone c
+  otherC = clone otherC
   if c.wrap?
     if otherC.wrap?
       tree.transformWrap dest, c, otherC, type
