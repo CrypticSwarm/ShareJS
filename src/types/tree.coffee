@@ -139,6 +139,8 @@ tree.transformWrapRef = (dest, c, otherC, type) ->
   for ref, loc in c.chi
     if otherC.cn <= ref
       c.chi[loc] += 1
+  if c.seq? and otherC.cn <= c.seq
+    c.seq += 1
   dest.push c
   dest
 
