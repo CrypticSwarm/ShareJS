@@ -43,7 +43,7 @@ createHTML = (name, info, i) ->
               </head>
               <body>
                 <table>
-                  <tr><th colspan="3"></th></tr>
+                  <tr><th colspan="3">#{info[0]}</th></tr>
                   <tr><td><img src="#{imgNames[0]}" /></td>
                       <td><img src="images/right-arrow.png" /></td>
                       <td><img src="#{imgNames[1]}" /></td>
