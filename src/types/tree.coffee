@@ -355,11 +355,12 @@ tree.applyWrap = (snapshot, c) ->
   throw new Error "Op(Wrap): all children's parent should equal par" unless chiOk
   throw new Error "Op(Wrap): Wrap shouldn't be a child of parent." unless -1 == par.chi.indexOf c.wrap
   if c.chi
-    c.chi.forEach (child) ->
+    c.chi.forEach (child, loc) ->
+      return if loc != c.chi.indexOf child # incase a dup in chi list
       idx = wrap.chi.indexOf child
       parChildId = par.chi.indexOf child
       throw new Error "Op(Wrap): Node# #{c.par} should contain #{child} before removal as a child" unless parChildId != -1
-      throw new Error "Op(Wrap): Node# #{c.wrap} shouldn't contain #{child} as a child" unless idx == -1
+      throw new Error "Op(Wrap): Node# #{c.wrap} shouldn't contain #{child} as a child" unless c.par == c.wrap or idx == -1
       par.chi.splice parChildId, 1
       snapshot[child].parent = c.wrap
       wrap.chi.push child
@@ -373,21 +374,27 @@ tree.applyWrap = (snapshot, c) ->
 tree.applyUnwrap = (snapshot, c) ->
   unwrap = snapshot[c.unwrap]
   par = snapshot[c.par]
-  chiOk = not c.chi or c.chi.every (child) -> snapshot[child].parent == c.unwrap
+  chiOk = not c.chi or c.chi.every (child) ->
+    snapshot[child].parent == c.unwrap
+  parChIdx = c.chi.indexOf c.unwrap
+
   throw new Error "Op(Unwrap): Target should exist." unless unwrap
   throw new Error "Op(Unwrap): Target's parent should be par. (#{unwrap.parent})" unless unwrap.parent == c.par
   throw new Error "Op(Unwrap): all children's parent should equal unwrap" unless chiOk
+  if parChIdx == -1
+    unwrap.parent = -1
   if c.chi
     c.chi.forEach (child) ->
       idx = unwrap.chi.indexOf child
       throw new Error "Op(Unwrap): Node# #{c.unwrap} should contain #{child} as a child" unless idx != -1
-      par.chi.push child
-      snapshot[child].parent = c.par
-      unwrap.chi.splice idx, 1
-  par.chi.splice (par.chi.indexOf c.unwrap), 1
+      if child != c.unwrap
+        par.chi.push child
+        snapshot[child].parent = c.par
+        unwrap.chi.splice idx, 1
+  if parChIdx == -1
+    par.chi.splice (par.chi.indexOf c.unwrap), 1
   par.chi.sort compareNum
   unwrap.chi.sort compareNum
-  unwrap.parent = -1
 
 tree.applyCreateNode = (snapshot, c) ->
   snapshot.splice(c.cn, 0, { parent: -1, value: c.value, chi: [] })
