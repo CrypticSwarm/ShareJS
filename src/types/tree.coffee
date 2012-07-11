@@ -237,7 +237,9 @@ tree.transformUnwrap = (dest, c, otherC, type) ->
   # chained c's target is on top 
   else if -1  != ind = c.chi.indexOf otherC.unwrap
     newOp = clone c
-    Array::splice.apply newOp.chi, [ind, 1].concat otherC.chi
+    newOp.chi.splice ind, 1
+    for child in otherC.chi
+      newOp.chi.push child if -1 == newOp.chi.indexOf child
     dest.push newOp
   # disjoint ops add unchanged
   else
@@ -254,7 +256,9 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
     if c == ins
       newOp = { wrap: c.wrap, par: c.par, chi: c.chi.slice(), seq: c.seq }
       if not fakeUnwrap otherC
-        Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
+        newOp.chi.splice idx, 1
+        for child in otherC.chi
+          newOp.chi.push child if -1 == newOp.chi.indexOf child 
       #if del.par == del.unwrap and -1 != idx = newOp.chi.indexOf del.unwrap
       #  newOp.chi.splice idx, 1
       dest.push newOp
@@ -277,7 +281,8 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
         if c.unwrap == c.par
             dest.push { unwrap: c.unwrap, par: c.par, chi: [], seq: c.seq }
         else
-          dest.push { unwrap: c.unwrap, par: c.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
+          ddiff.push ins.wrap if -1 == ddiff.indexOf ins.wrap
+          dest.push { unwrap: c.unwrap, par: c.par, chi: ddiff, seq: c.seq }
   # disjoint
   else
     dest.push c
