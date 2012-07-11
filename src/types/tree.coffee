@@ -263,7 +263,11 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
       #  newOp.chi.splice idx, 1
       dest.push newOp
     else if not (del.par == del.unwrap and -1 != c.chi.indexOf del.unwrap)
-      dest.push { unwrap: c.unwrap, par: otherC.wrap, chi: c.chi, seq: c.seq }
+      chi = c.chi.slice()
+      for child in otherC.chi
+        idx = chi.indexOf child
+        chi.splice idx, 1 if -1 != idx
+      dest.push { unwrap: c.unwrap, par: otherC.wrap, chi: chi, seq: c.seq }
   # ins is on bottom
   # For now make it easy and assume that if the insert
   # was already there that it wanted to eject it also.
