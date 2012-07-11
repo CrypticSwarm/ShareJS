@@ -198,22 +198,35 @@ tree.transformWrap = (dest, c, otherC, type) ->
     dest.push c
   dest
 
+
+fakeUnwrap = (op) ->
+  -1 != op.chi.indexOf op.unwrap
+
 tree.transformUnwrap = (dest, c, otherC, type) ->
   if c.unwrap == otherC.unwrap
     ldiff = difference c.chi, otherC.chi
     #rdiff = difference otherC.chi, c.chi
+    if (fakeUnwrap otherC) and not (fakeUnwrap c)
+      dest.push { unwrap: c.unwrap, par: c.par, chi: [], seq: c.seq }
     if ldiff.length != 0
       for node in ldiff
         if node != otherC.unwrap
           dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
           dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
   else if c.unwrap == otherC.par and otherC.unwrap == c.par
-    if -1 == otherC.chi.indexOf c.unwrap
-      dest.push { unwrap: c.unwrap, par: c.par, chi: [], seq: c.seq }
-    for node in c.chi
-      if node != otherC.unwrap
-        dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
-      dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
+    chi = c.chi.slice()
+    par = c.par
+    if -1 != idx = chi.indexOf otherC.unwrap
+      chi.splice idx, 1
+    if -1 != idx = otherC.chi.indexOf c.unwrap
+      par = otherC.par
+      chi = []
+    dest.push { unwrap: c.unwrap, par: par, chi: chi, seq: c.seq }
+    if -1 != idx = otherC.chi.indexOf c.unwrap
+      for node in c.chi
+        if node != otherC.unwrap
+          dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
+          dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
   # chained op otherC's target is on top
   else if -1 != ind = otherC.chi.indexOf c.unwrap
     dest.push { unwrap: c.unwrap, par: otherC.par, chi: c.chi, seq: c.seq }
@@ -236,10 +249,13 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
   if -1 != idx = ins.chi.indexOf del.unwrap
     if c == ins
       newOp = { wrap: c.wrap, par: c.par, chi: c.chi.slice(), seq: c.seq }
-      Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
+      if not fakeUnwrap otherC
+        Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
+      #if del.par == del.unwrap and -1 != idx = newOp.chi.indexOf del.unwrap
+      #  newOp.chi.splice idx, 1
       dest.push newOp
-    else
-      dest.push { unwrap: c.unwrap, par: otherC.wrap, chi: c.chi.slice(), seq: c.seq }
+    else if not (del.par == del.unwrap and -1 != c.chi.indexOf del.unwrap)
+      dest.push { unwrap: c.unwrap, par: otherC.wrap, chi: c.chi, seq: c.seq }
   # ins is on bottom
   # For now make it easy and assume that if the insert
   # was already there that it wanted to eject it also.
@@ -253,7 +269,11 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
         dest.push { unwrap: node, par: otherC.unwrap, chi: [], seq: c.seq }
         dest.push { wrap: node, par: c.wrap, chi: [], seq: c.seq }
     else
-      dest.push { unwrap: c.unwrap, par: c.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
+      if -1 == c.chi.indexOf c.unwrap
+        if c.unwrap == c.par
+            dest.push { unwrap: c.unwrap, par: c.par, chi: [], seq: c.seq }
+        else
+          dest.push { unwrap: c.unwrap, par: c.par, chi: (ddiff.concat ins.wrap), seq: c.seq }
   # disjoint
   else
     dest.push c
