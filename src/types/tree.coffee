@@ -165,8 +165,12 @@ tree.transformWrap = (dest, c, otherC, type) ->
   else if c.par == otherC.par
     ldiff = difference c.chi, otherC.chi
     rdiff = difference otherC.chi, c.chi
+    if c.wrap == c.par
+      dest.push { wrap: c.wrap, par: c.par, chi: [], seq: c.seq }
+    else if otherC.wrap == otherC.par
+      dest.push c
     # disjoint children both occur unchanged
-    if ldiff.length == c.chi.length and rdiff.length == otherC.chi.length
+    else if ldiff.length == c.chi.length and rdiff.length == otherC.chi.length
       dest.push c
     # same children... nest them
     else if ldiff.length == 0 and rdiff.length == 0
