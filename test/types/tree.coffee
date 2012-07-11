@@ -14,6 +14,19 @@ unwrapState = [ { parent: -1, value: 'root', chi: [3,4] },
                 { parent: 0, value: 'x', chi: [1,5] },
                 { parent: 4, value: 'y', chi: [2] } ]
 
+triang = [ { parent: 2, value: 'A', chi: [1] }
+         { parent: 0, value: 'B', chi: [2] }
+         { parent: 1, value: 'C', chi: [0] } ]
+
+circ = [ { parent: 1, value: 'A', chi: [1,2] }
+         { parent: 0, value: 'B', chi: [0,3] }
+         { parent: 0, value: 'C', chi: [] }
+         { parent: 1, value: 'D', chi: [] } ]
+
+twistedPair = [ { parent: 1, value: 'A', chi: [1] }
+                { parent: 0, value: 'B', chi: [0, 2] }
+                { parent: 1, value: 'c', chi: [] } ]
+
 wrapUnwrapState = [ { parent: -1, value: 'root', chi: [3,4] },
                     { parent: 4, value: 'a', chi: [] },
                     { parent: 4, value: 'b', chi: [] },
@@ -101,6 +114,12 @@ module.exports = {
         [ { wrap: 5, par: 0, chi: [1,2], seq: 6 } ]
         [ { wrap: 4, par: 0, chi: [2,3], seq: 6 } ]
         [-1, 5, 6, 4, 0, 0, 5] ]
+
+      [ "T(Wrap, Wrap) circular ref.", state
+        [ { wrap: 5, par: 4, chi: [], seq: 6 } ]
+        [ { wrap: 4, par: 5, chi: [], seq: 6 } ]
+        [-1, 0, 0, 0, 5, 4] ]
+
     ]
     "T(Unwrap, Unwrap)": [
 
@@ -133,6 +152,31 @@ module.exports = {
         [ { unwrap: 5, par: 4, chi: [2], seq: 6 } ],
         [ { unwrap: 4, par: 0, chi: [1,5], seq: 6 } ],
         [-1, 0, 0, 0, -1, -1] ]
+
+      [ "T(Unwrap, Unwrap) circular target.", triang,
+        [ { unwrap: 0, par: 2, chi: [1], seq: 4 } ],
+        [ { unwrap: 1, par: 0, chi: [2], seq: 4 } ],
+        [-1, -1, 2 ] ]
+
+      [ "T(Unwrap, Unwrap) circular target.", triang,
+        [ { unwrap: 0, par: 2, chi: [], seq: 4 } ],
+        [ { unwrap: 1, par: 0, chi: [], seq: 4 } ],
+        [-1, -1, 1 ] ]
+
+      [ "T(Unwrap, Unwrap) circular target.", circ,
+        [ { unwrap: 0, par: 1, chi: [], seq: 4 } ],
+        [ { unwrap: 1, par: 0, chi: [], seq: 4 } ],
+        [-1, -1, 0, 1] ]
+
+      [ "T(Unwrap, Unwrap) circular target.", circ,
+        [ { unwrap: 0, par: 1, chi: [2], seq: 4 } ],
+        [ { unwrap: 1, par: 0, chi: [3], seq: 4 } ],
+        [-1, -1, 1, 0] ]
+
+      [ "T(Unwrap, Unwrap) twisted pair.", twistedPair
+        [ { unwrap: 0, par: 1, chi: [1], seq: 3 } ]
+        [ { unwrap: 1, par: 0, chi: [0, 2], seq: 3 } ]
+        [-1, -1, 0] ]
     ]
     "T(Create, Create)": [
 
@@ -168,6 +212,19 @@ module.exports = {
         [ { wrap: 5, par: 0, chi: [4,3], seq: 6 } ]
         [ { unwrap: 4, par: 0, chi: [1,2], seq: 6 } ]
         [-1, 5, 5, 5, -1, 0] ]
+      [ "T(Unwrap, Wrap) Self-Help Loop?.", [ { parent: 0, value: 'A', chi: [0] }, { parent: -1, value: 'B', chi: [] } ]
+        [ { unwrap: 0, par: 0, chi: [0], seq: 6 } ]
+        [ { wrap: 1, par: 0, chi: [0], seq: 6 } ]
+        [1, 0] ]
+      [ "T(Unwrap, Wrap) Self-Help Loop?.", [ { parent: 1, value: 'A', chi: [1] }, { parent: 0, value: 'B', chi: [0] }, { parent: -1, value: 'C', chi: [] } ]
+        [ { unwrap: 0, par: 1, chi: [1], seq: 6 } ]
+        [ { wrap: 2, par: 1, chi: [0], seq: 6 } ]
+        [-1, 2, 1] ]
+
+      [ "T(Unwrap, Wrap) Self-Help Loop?.", [ { parent: 1, value: 'A', chi: [1] }, { parent: 0, value: 'B', chi: [0] } ]
+        [ { unwrap: 1, par: 0, chi: [ 0 ], seq: 6 } ]
+        [ { unwrap: 0, par: 1, chi: [  ], seq: 7 } ]
+        [-1, -1] ]
     ]
 }
 
