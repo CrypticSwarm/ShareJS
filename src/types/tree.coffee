@@ -149,13 +149,7 @@ tree.transformWrapRef = (dest, c, otherC, type) ->
 # warp: wrap -> targetnode, par -> parent, chi -> child
 # unwarp: unwrap -> targetnode, par -> parent, chi -> child
 tree.transformWrap = (dest, c, otherC, type) ->
-  # Direct circle ref don't allow
-  if c.wrap == otherC.par and otherC.wrap == c.par
-    if type == 'left'
-      dest.push tree.invertComponent otherC
-      dest.push c
-  # same target node
-  else if c.wrap == otherC.wrap
+  if c.wrap == otherC.wrap
     # same parent grab all children
     if c.par == otherC.par
       diff = difference c.chi, otherC.chi
@@ -205,17 +199,21 @@ tree.transformWrap = (dest, c, otherC, type) ->
   dest
 
 tree.transformUnwrap = (dest, c, otherC, type) ->
-  if c.unwrap == otherC.par and otherC.unwrap == c.par
-    if type == 'left'
-      dest.push tree.invertComponent otherC
-      dest.push c
-  else if c.unwrap == otherC.unwrap
+  if c.unwrap == otherC.unwrap
     ldiff = difference c.chi, otherC.chi
     #rdiff = difference otherC.chi, c.chi
     if ldiff.length != 0
       for node in ldiff
+        if node != otherC.unwrap
+          dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
+          dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
+  else if c.unwrap == otherC.par and otherC.unwrap == c.par
+    if -1 == otherC.chi.indexOf c.unwrap
+      dest.push { unwrap: c.unwrap, par: c.par, chi: [], seq: c.seq }
+    for node in c.chi
+      if node != otherC.unwrap
         dest.push { unwrap: node, par: c.unwrap, chi: [], seq: c.seq }
-        dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
+      dest.push { wrap: node, par: c.par, chi: [], seq: c.seq }
   # chained op otherC's target is on top
   else if -1 != ind = otherC.chi.indexOf c.unwrap
     dest.push { unwrap: c.unwrap, par: otherC.par, chi: c.chi, seq: c.seq }
@@ -234,10 +232,8 @@ tree.transformWrapUnwrap = (dest, c, otherC, type) ->
   ins = otherC if otherC.wrap?
   del = c if c.unwrap?
   del = otherC if otherC.unwrap?
-  if del.unwrap == ins.par and ins.wrap == del.par
-    dest.push tree.invertComponent otherC
   # ins is on top
-  else if -1 != idx = ins.chi.indexOf del.unwrap
+  if -1 != idx = ins.chi.indexOf del.unwrap
     if c == ins
       newOp = { wrap: c.wrap, par: c.par, chi: c.chi.slice(), seq: c.seq }
       Array::splice.apply newOp.chi, [idx, 1].concat otherC.chi
