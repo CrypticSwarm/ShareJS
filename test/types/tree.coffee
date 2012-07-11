@@ -24,18 +24,37 @@ wrapUnwrapState = [ { parent: -1, value: 'root', chi: [3,4] },
 ## Wrap
 
 module.exports = {
-  applyOps: (state, cop1, sop1) ->
+  applyOps: (state, cop, sop) ->
     server = JSON.parse JSON.stringify state
     client = JSON.parse JSON.stringify state
+    cop1 = []
+    tree.append cop1, c for c in cop
+    sop1 = []
+    tree.append sop1, c for c in sop
     server1 = tree.apply server, sop1
     client1 = tree.apply client, cop1
     cop2 = tree.transform sop1, cop1, 'right'
     sop2 = tree.transform cop1, sop1, 'left'
-    server2 = tree.apply server1, sop2
-    client2 = tree.apply client1, cop2
+    try
+      server2 = tree.apply server1, sop2
+    catch e
+      console.log server1
+      console.log sop1
+      console.log sop2
+      se = e
+      server2 = []
+    try
+      client2 = tree.apply client1, cop2
+    catch e
+      console.log client1
+      console.log cop1
+      console.log cop2
+      ce = e
+      client2 = []
+
     { init: state
     client1: client1, client2: client2
-    server1: server1, server2: server2 }
+    server1: server1, server2: server2, ce: ce, se: se }
   tests:
     "T(Wrap, Wrap)": [
       [ "T(Wrap, Wrap) same op.", state
